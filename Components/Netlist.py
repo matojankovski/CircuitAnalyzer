@@ -11,6 +11,8 @@ class Circuit:
         self.ground_name = 0
         self.components= []
 
+        #where to add???
+        self.unit_prefix = {'meg': 'e6', 'f': 'e-15', 'p': 'e-12', 'n': 'e-9', 'u': 'e-6', 'm': 'e-3', 'k': 'e3', 'g': 'e9', 't': 'e12'}
 
     def add_component(self, component):
         """Add a component to the circuit."""
@@ -35,6 +37,13 @@ class Circuit:
 
         return max_node_no
 
+    def convert_unit(self, string):
+        for prefix, prefix_value in self.unit_prefix.items():
+            if prefix in string:
+                string = string.replace(prefix, prefix_value)
+                break
+
+        return string
 
     def create_conductance_matrix(self):
 
@@ -46,30 +55,31 @@ class Circuit:
         for component in self.components:
             if component.component_name.startswith("R"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
+                value = float(self.convert_unit(component.value))
 
                 if Node1 == 0 or Node2 == 0: #grounded
-                    g.append(1.0/component.value)
+                    g.append(1.0/value)
                     g_row.append(max([Node1, Node2]) - 1)
                     g_column.append(max([Node1, Node2]) - 1)
 
                 else: #not grounded
                     #diagolnal
-                    g.append(1.0/ component.value)
+                    g.append(1.0/ value)
                     g_row.append(Node1 - 1)
                     g_column.append(Node1 - 1)
 
                     #diagolnal
-                    g.append(1.0 / component.value)
+                    g.append(1.0 / value)
                     g_row.append(Node2 - 1)
                     g_column.append(Node2 - 1)
 
                     # Node1-Node2 term
-                    g.append(-1.0 / component.value)
+                    g.append(-1.0 / value)
                     g_row.append(Node1 - 1)
                     g_column.append(Node2 - 1)
 
                     # Node2-Node1 term
-                    g.append(-1.0 / component.value)
+                    g.append(-1.0 / value)
                     g_row.append(Node2 - 1)
                     g_column.append(Node1 - 1)
 

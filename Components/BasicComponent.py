@@ -13,6 +13,8 @@ class BasicComponent:
     def __repr__(self):
         return f"BasicComponent(\'{self.component_name}, {self.netlist_1}, {self.netlist_2}, {self.value} {self.unit})"
 
+
+
 class Resistor(BasicComponent):
     unit = "Ω"  # Define unit for resistors
 
