@@ -32,11 +32,18 @@ class Circuit:
 
         return max_node_no
 
-    def create_conductance_matrix(self):
+    def get_no_of_sources(self, source: str):
+        no_of_sources = 0
+        for component in self.components:
+            if component.component_name.startswith(f"{source}"):
+                no_of_sources += 1
+        return no_of_sources
 
-        g = []
-        g_row = []
-        g_column = []
+    def create_A_matrix(self):
+
+        A = []
+        A_row = []
+        A_column = []
         max_nodes = self.max_nodes()
 
         for component in self.components:
@@ -45,30 +52,30 @@ class Circuit:
                 value = component.value
 
                 if Node1 == 0 or Node2 == 0: #grounded
-                    g.append(1.0/value)
-                    g_row.append(max([Node1, Node2]) - 1)
-                    g_column.append(max([Node1, Node2]) - 1)
+                    A.append(1.0/value)
+                    A_row.append(max([Node1, Node2]) - 1)
+                    A_column.append(max([Node1, Node2]) - 1)
 
                 else: #not grounded
                     #diagolnal
-                    g.append(1.0/ value)
-                    g_row.append(Node1 - 1)
-                    g_column.append(Node1 - 1)
+                    A.append(1.0/ value)
+                    A_row.append(Node1 - 1)
+                    A_column.append(Node1 - 1)
 
                     #diagolnal
-                    g.append(1.0 / value)
-                    g_row.append(Node2 - 1)
-                    g_column.append(Node2 - 1)
+                    A.append(1.0 / value)
+                    A_row.append(Node2 - 1)
+                    A_column.append(Node2 - 1)
 
                     # Node1-Node2 term
-                    g.append(-1.0 / value)
-                    g_row.append(Node1 - 1)
-                    g_column.append(Node2 - 1)
+                    A.append(-1.0 / value)
+                    A_row.append(Node1 - 1)
+                    A_column.append(Node2 - 1)
 
                     # Node2-Node1 term
-                    g.append(-1.0 / value)
-                    g_row.append(Node2 - 1)
-                    g_column.append(Node1 - 1)
+                    A.append(-1.0 / value)
+                    A_row.append(Node2 - 1)
+                    A_column.append(Node1 - 1)
 
         for k, component in enumerate(self.components):
             if component.component_name.startswith("V"):
@@ -76,51 +83,70 @@ class Circuit:
 
                 if Node1 == 0:  # if grounded to N1 ...
                     # negative terminal
-                    g.append(-1)
-                    g_row.append(Node2 - 1)
-                    g_column.append(max_nodes + k)
+                    A.append(-1)
+                    A_row.append(Node2 - 1)
+                    A_column.append(max_nodes + k)
 
                     # negative terminal
-                    g.append(-1)
-                    g_row.append(max_nodes + k)
-                    g_column.append(Node2 - 1)
+                    A.append(-1)
+                    A_row.append(max_nodes + k)
+                    A_column.append(Node2 - 1)
 
                 elif Node2 == 0:  # if grounded to N2 ...
                     # positive terminal
-                    g.append(1)
-                    g_row.append(Node1 - 1)
-                    g_column.append(max_nodes+ k)
+                    A.append(1)
+                    A_row.append(Node1 - 1)
+                    A_column.append(max_nodes+ k)
 
                     # positive terminal
-                    g.append(1)
-                    g_row.append(max_nodes + k)
-                    g_column.append(Node1 - 1)
+                    A.append(1)
+                    A_row.append(max_nodes + k)
+                    A_column.append(Node1 - 1)
 
                 else:  # if not grounded ...
                     # positive terminal
-                    g.append(1)
-                    g_row.append(Node1 - 1)
-                    g_column.append(max_nodes + k)
+                    A.append(1)
+                    A_row.append(Node1 - 1)
+                    A_column.append(max_nodes + k)
 
                     # positive terminal
-                    g.append(1)
-                    g_row.append(max_nodes + k)
-                    g_column.append(Node1 - 1)
+                    A.append(1)
+                    A_row.append(max_nodes + k)
+                    A_column.append(Node1 - 1)
 
                     # negative terminal
-                    g.append(-1)
-                    g_row.append(Node2 - 1)
-                    g_column.append(max_nodes+ k)
+                    A.append(-1)
+                    A_row.append(Node2 - 1)
+                    A_column.append(max_nodes+ k)
 
                     # negative terminal
-                    g.append(-1)
-                    g_row.append(max_nodes+ k)
-                    g_column.append(Node2 - 1)
+                    A.append(-1)
+                    A_row.append(max_nodes+ k)
+                    A_column.append(Node2 - 1)
 
-        self.G = csr_matrix((g,(g_row,g_column)))
-        return self.G
+        self.A = csr_matrix((A, (A_row, A_column)))
+        return self.A
 
+    def create_z_matrix(self):
+        """
+        'rhs_matrix' creates the right hand side matrix
 
+        :return: rhs, right hand side
+        """
+        # reorder if necessary
+
+        # initialize rhs
+        max_nodes = self.max_nodes()
+        number_of_voltage_sources = self.get_no_of_sources("V")
+        number_of_current_sources = self.get_no_of_sources("I")
+        z_matrix = [0] * (max_nodes + number_of_voltage_sources + number_of_current_sources)
+
+        for k, component in enumerate(self.components):
+            if component.component_name.startswith("V"):
+                z_matrix[max_nodes + k] += component.value
+
+        self.z_matrix = np.array(z_matrix)
+        return self.z_matrix
 
 
 
