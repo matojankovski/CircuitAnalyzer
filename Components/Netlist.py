@@ -11,24 +11,19 @@ class Circuit:
         self.ground_name = 0
         self.components= []
 
-        #where to add???
-        self.unit_prefix = {'meg': 'e6', 'f': 'e-15', 'p': 'e-12', 'n': 'e-9', 'u': 'e-6', 'm': 'e-3', 'k': 'e3', 'g': 'e9', 't': 'e12'}
-
-    def add_component(self, component):
+    def add_component_internal(self, component: BasicComponent):
         """Add a component to the circuit."""
         self.components.append(component)
 
-    @property
-    def R(self):
-        return lambda name, node1, node2, value: self.add_component(Resistor(name, node1, node2, value))
-
-    @property
-    def C(self):
-        return lambda name, node1, node2, value: self.add_component(Capacitor(name, node1, node2, value))
-
-    @property
-    def V(self):
-        return lambda name, node1, node2, value: self.add_component(VoltageSource(name, node1, node2, value))
+    def add_component(self, name: str, node1, node2, value):
+        if name.lower().startswith("v"):
+            self.add_component_internal(VoltageSource(name, node1, node2, value))
+        elif name.lower().startswith("r"):
+            self.add_component_internal(Resistor(name, node1, node2, value))
+        elif name.lower().startswith("c"):
+            self.add_component_internal(Capacitor(name, node1, node2, value))
+        elif name.lower().startswith("l"):
+            self.add_component_internal(Inductor(name, node1, node2, value))
 
     def max_nodes(self):
         max_node_no = 0
@@ -36,14 +31,6 @@ class Circuit:
             max_node_no = max(max_node_no, max(component.netlist_1, component.netlist_2))
 
         return max_node_no
-
-    def convert_unit(self, string):
-        for prefix, prefix_value in self.unit_prefix.items():
-            if prefix in string:
-                string = string.replace(prefix, prefix_value)
-                break
-
-        return string
 
     def create_conductance_matrix(self):
 
@@ -55,7 +42,7 @@ class Circuit:
         for component in self.components:
             if component.component_name.startswith("R"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
-                value = float(self.convert_unit(component.value))
+                value = component.value
 
                 if Node1 == 0 or Node2 == 0: #grounded
                     g.append(1.0/value)
@@ -86,7 +73,6 @@ class Circuit:
         for k, component in enumerate(self.components):
             if component.component_name.startswith("V"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
-
 
                 if Node1 == 0:  # if grounded to N1 ...
                     # negative terminal
@@ -130,11 +116,6 @@ class Circuit:
                     g.append(-1)
                     g_row.append(max_nodes+ k)
                     g_column.append(Node2 - 1)
-
-
-
-
-
 
         self.G = csr_matrix((g,(g_row,g_column)))
         return self.G
