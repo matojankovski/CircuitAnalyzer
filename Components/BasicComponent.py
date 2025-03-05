@@ -5,10 +5,9 @@ class BasicComponent:
 
     def __init__(self, component_name, netlist_1, netlist_2, value):
         self.component_name = str(component_name)
-        self.netlist_1 = netlist_1
-        self.netlist_2 = netlist_2
+        self.netlist_1 = int(netlist_1)
+        self.netlist_2 = int(netlist_2)
         self.value = float(self.convert_unit(value))
-
 
     def __str__(self):
         return f"{self.component_name} {self.netlist_1} {self.netlist_2} {self.value} {self.unit}"

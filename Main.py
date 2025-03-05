@@ -8,6 +8,7 @@ if __name__ == '__main__':
     read_netlist("TestCircuit1.cir")
 
 
+
     # my_circuit = Circuit("New Circle")
     # my_circuit.add_component("V1", 1, 0, "5")
     # my_circuit.add_component("R1", 1, 2, "2k")

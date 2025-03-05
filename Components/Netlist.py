@@ -13,7 +13,13 @@ class Circuit:
 
     def add_component_internal(self, component: BasicComponent):
         """Add a component to the circuit."""
-        self.components.append(component)
+        index = len(self.components)
+        for i in range(len(self.components)):
+            if component.component_name < self.components[i].component_name:
+                index = i
+                break
+
+        self.components.insert(index, component)
 
     def add_component(self, name: str, node1, node2, value):
         if name.lower().startswith("v"):
@@ -77,7 +83,10 @@ class Circuit:
                     A_row.append(Node2 - 1)
                     A_column.append(Node1 - 1)
 
-        for k, component in enumerate(self.components):
+        k = 0
+        # number_of_voltage_sources = self.get_no_of_sources("V")
+        # while k != number_of_voltage_sources:
+        for component in self.components:
             if component.component_name.startswith("V"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
 
@@ -92,6 +101,8 @@ class Circuit:
                     A_row.append(max_nodes + k)
                     A_column.append(Node2 - 1)
 
+                    k += 1
+
                 elif Node2 == 0:  # if grounded to N2 ...
                     # positive terminal
                     A.append(1)
@@ -102,6 +113,8 @@ class Circuit:
                     A.append(1)
                     A_row.append(max_nodes + k)
                     A_column.append(Node1 - 1)
+
+                    k += 1
 
                 else:  # if not grounded ...
                     # positive terminal
@@ -124,6 +137,8 @@ class Circuit:
                     A_row.append(max_nodes+ k)
                     A_column.append(Node2 - 1)
 
+                    k += 1
+
         self.A = csr_matrix((A, (A_row, A_column)))
         return self.A
 
@@ -133,17 +148,16 @@ class Circuit:
 
         :return: rhs, right hand side
         """
-        # reorder if necessary
-
         # initialize rhs
         max_nodes = self.max_nodes()
         number_of_voltage_sources = self.get_no_of_sources("V")
         number_of_current_sources = self.get_no_of_sources("I")
         z_matrix = [0] * (max_nodes + number_of_voltage_sources + number_of_current_sources)
-
-        for k, component in enumerate(self.components):
+        k = 0
+        for component in self.components:
             if component.component_name.startswith("V"):
                 z_matrix[max_nodes + k] += component.value
+                k += 1
 
         self.z_matrix = np.array(z_matrix)
         return self.z_matrix
