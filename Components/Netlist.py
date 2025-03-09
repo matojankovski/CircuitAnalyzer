@@ -1,3 +1,5 @@
+from scipy.sparse.linalg import spsolve
+
 from Components.BasicComponent import*
 from scipy.sparse import csr_matrix
 import numpy as np
@@ -161,6 +163,47 @@ class Circuit:
 
         self.z_matrix = np.array(z_matrix)
         return self.z_matrix
+
+    def incidence_matrix(self):
+        a = []
+        a_row = []
+        a_col = []
+
+        # cycle on branches (N1 and N2)
+        k = 0
+        for component in self.components:
+            Node1, Node2 = component.netlist_1, component.netlist_2
+
+            # detect connection to ground
+            if Node1 == 0:
+                a.append(-1)
+                a_row.append(Node2 - 1)
+                a_col.append(k)
+            elif Node2 == 0:
+                a.append(1)
+                a_row.append(Node1 - 1)
+                a_col.append(k)
+            else:
+                a.append(1)
+                a_row.append(Node1 - 1)
+                a_col.append(k)
+                a.append(-1)
+                a_row.append(Node2 - 1)
+                a_col.append(k)
+
+            k += 1
+
+        # create conductance matrix
+        self.i_m = csr_matrix((a, (a_row, a_col)))
+
+    def get_voltage(self):
+        self.solution = spsolve(self.A, self.z_matrix)
+        max_nodes = self.max_nodes()
+
+        self.vb = self.i_m.transpose() * self.solution[:max_nodes, ...]
+        print(self.vb)
+
+
 
 
 
