@@ -18,10 +18,8 @@ def read_netlist(filename):
                 A = my_circuit.create_A_matrix()
                 z = my_circuit.create_z_matrix()
                 solution = spsolve(A, z)
-                print(solution)
                 i = my_circuit.incidence_matrix()
-                print(i)
-                my_circuit.get_voltage()
+                my_circuit.get_OP(solution, i)
 
     # return my_circuit
 

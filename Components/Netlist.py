@@ -86,8 +86,6 @@ class Circuit:
                     A_column.append(Node1 - 1)
 
         k = 0
-        # number_of_voltage_sources = self.get_no_of_sources("V")
-        # while k != number_of_voltage_sources:
         for component in self.components:
             if component.component_name.startswith("V"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
@@ -145,12 +143,6 @@ class Circuit:
         return self.A
 
     def create_z_matrix(self):
-        """
-        'rhs_matrix' creates the right hand side matrix
-
-        :return: rhs, right hand side
-        """
-        # initialize rhs
         max_nodes = self.max_nodes()
         number_of_voltage_sources = self.get_no_of_sources("V")
         number_of_current_sources = self.get_no_of_sources("I")
@@ -169,7 +161,6 @@ class Circuit:
         a_row = []
         a_col = []
 
-        # cycle on branches (N1 and N2)
         k = 0
         for component in self.components:
             Node1, Node2 = component.netlist_1, component.netlist_2
@@ -193,15 +184,26 @@ class Circuit:
 
             k += 1
 
-        # create conductance matrix
         self.i_m = csr_matrix((a, (a_row, a_col)))
+        return self.i_m
 
-    def get_voltage(self):
-        self.solution = spsolve(self.A, self.z_matrix)
+    def get_OP(self, solved_matrix, incidence_matrix):
         max_nodes = self.max_nodes()
 
-        self.vb = self.i_m.transpose() * self.solution[:max_nodes, ...]
-        print(self.vb)
+        vb = incidence_matrix.transpose() * solved_matrix[:max_nodes, ...]
+        k = 0
+        for component in self.components:
+            print(f"{component.component_name} Voltage::{vb[k]:.3f} V")
+            print(f"Current:{vb[k]/component.value:.5f} I")
+            print(f"Power:{vb[k]*vb[k]/component.value:.5f} W")
+
+
+            k += 1
+
+
+
+
+
 
 
 
