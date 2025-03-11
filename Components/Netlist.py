@@ -188,17 +188,19 @@ class Circuit:
         return self.i_m
 
     def get_OP(self, solved_matrix, incidence_matrix):
+        result = ""
+
         max_nodes = self.max_nodes()
 
         vb = incidence_matrix.transpose() * solved_matrix[:max_nodes, ...]
         k = 0
         for component in self.components:
-            print(f"{component.component_name} Voltage::{vb[k]:.3f} V")
-            print(f"Current:{vb[k]/component.value:.5f} I")
-            print(f"Power:{vb[k]*vb[k]/component.value:.5f} W")
-
-
+            result += f"{component.component_name}\n"
+            result += f"{'Voltage:':<10}{vb[k]:>10.3f} V\n"
+            result += f"{'Current:':<10}{vb[k] / component.value:>10.5f} I\n"
+            result += f"{'Power:':<10}{vb[k] * vb[k] / component.value:>10.5f} W\n"
             k += 1
+        return result
 
 
 
