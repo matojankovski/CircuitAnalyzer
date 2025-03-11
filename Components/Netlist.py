@@ -139,8 +139,8 @@ class Circuit:
 
                     k += 1
 
-        self.A = csr_matrix((A, (A_row, A_column)))
-        return self.A
+        A = csr_matrix((A, (A_row, A_column)))
+        return A
 
     def create_z_matrix(self):
         max_nodes = self.max_nodes()
@@ -153,8 +153,8 @@ class Circuit:
                 z_matrix[max_nodes + k] += component.value
                 k += 1
 
-        self.z_matrix = np.array(z_matrix)
-        return self.z_matrix
+        z_matrix = np.array(z_matrix)
+        return z_matrix
 
     def incidence_matrix(self):
         a = []
@@ -184,8 +184,8 @@ class Circuit:
 
             k += 1
 
-        self.i_m = csr_matrix((a, (a_row, a_col)))
-        return self.i_m
+        i_m = csr_matrix((a, (a_row, a_col)))
+        return i_m
 
     def get_OP(self, solved_matrix, incidence_matrix):
         result = ""
@@ -197,8 +197,12 @@ class Circuit:
         for component in self.components:
             result += f"{component.component_name}\n"
             result += f"{'Voltage:':<10}{vb[k]:>10.3f} V\n"
-            result += f"{'Current:':<10}{vb[k] / component.value:>10.5f} I\n"
-            result += f"{'Power:':<10}{vb[k] * vb[k] / component.value:>10.5f} W\n"
+            if component.component_name.startswith("V"):
+                result += f"{'Current:':<10}{solved_matrix[k]:>10.5f} I\n"
+                result += f"{'Power:':<10}{vb[k] * solved_matrix[k]:>10.5f} W\n"
+            else:
+                result += f"{'Current:':<10}{vb[k] / component.value:>10.5f} I\n"
+                result += f"{'Power:':<10}{vb[k] * vb[k] / component.value:>10.5f} W\n"
             k += 1
         return result
 
