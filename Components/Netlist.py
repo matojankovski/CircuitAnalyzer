@@ -23,6 +23,8 @@ class Circuit:
 
         self.components.insert(index, component)
 
+
+
     def add_component(self, name: str, node1, node2, value):
         if name.lower().startswith("v"):
             self.add_component_internal(VoltageSource(name, node1, node2, value))
@@ -182,6 +184,7 @@ class Circuit:
                 a_row.append(Node2 - 1)
                 a_col.append(k)
 
+
             k += 1
 
         i_m = csr_matrix((a, (a_row, a_col)))
@@ -191,21 +194,22 @@ class Circuit:
         result = ""
 
         max_nodes = self.max_nodes()
-
+        # print(solved_matrix)
+        # print(incidence_matrix)
         vb = incidence_matrix.transpose() * solved_matrix[:max_nodes, ...]
+        # print(vb)
         k = 0
         for component in self.components:
             result += f"{component.component_name}\n"
-            result += f"{'Voltage:':<10}{vb[k]:>10.3f} V\n"
+            result += f"{'Voltage:':<10}{('{:.3f}'.format(vb[k]).rstrip('0').rstrip('.')):>10} V\n"
             if component.component_name.startswith("V"):
-                result += f"{'Current:':<10}{solved_matrix[k]:>10.5f} I\n"
-                result += f"{'Power:':<10}{vb[k] * solved_matrix[k]:>10.5f} W\n"
+                result += f"{'Current:':<10}{('{:.5f}'.format(solved_matrix[k]).rstrip('0').rstrip('.')):>10} I\n"
+                result += f"{'Power:':<10}{('{:.5f}'.format(vb[k] * solved_matrix[k]).rstrip('0').rstrip('.')):>10} W\n"
             else:
-                result += f"{'Current:':<10}{vb[k] / component.value:>10.5f} I\n"
-                result += f"{'Power:':<10}{vb[k] * vb[k] / component.value:>10.5f} W\n"
+                result += f"{'Current:':<10}{('{:.5f}'.format(vb[k] / component.value).rstrip('0').rstrip('.')):>10} I\n"
+                result += f"{'Power:':<10}{('{:.5f}'.format(vb[k] * vb[k] / component.value).rstrip('0').rstrip('.')):>10} W\n"
             k += 1
         return result
-
 
 
 

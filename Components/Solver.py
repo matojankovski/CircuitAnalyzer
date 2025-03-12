@@ -16,9 +16,15 @@ def read_netlist(filename):
 
             if line.startswith(".op"):
                 A = my_circuit.create_A_matrix()
+                print(f"A matrix: {A}")
                 z = my_circuit.create_z_matrix()
+                print(f"z matrix: {z}")
+
                 solution = spsolve(A, z)
+                print(f"solution:{solution}")
                 i = my_circuit.incidence_matrix()
+                print(f"i:{i}")
+
                 print(my_circuit.get_OP(solution, i))
 
     # return my_circuit
