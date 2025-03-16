@@ -4,10 +4,18 @@ class BasicComponent:
                         't': 'e12'}
 
     def __init__(self, component_name, netlist_1, netlist_2, value):
+        #ensure that nodes have different numbers
+        if netlist_1 == netlist_2:
+            raise ValueError(
+                f"Invalid component connection: netlist_1 ({netlist_1}) and netlist_2 ({netlist_2}) must be different.")
+
         self.component_name = str(component_name)
         self.netlist_1 = int(netlist_1)
         self.netlist_2 = int(netlist_2)
         self.value = float(self.convert_unit(value))
+
+        if self.value < 0 and not isinstance(self, VoltageSource):
+            raise ValueError(f"Invalid value for {self.component_name}: {self.value}. Value cannot be negative.")
 
     def __str__(self):
         return f"{self.component_name} {self.netlist_1} {self.netlist_2} {self.value} {self.unit}"
@@ -16,6 +24,7 @@ class BasicComponent:
         return f"BasicComponent(\'{self.component_name}, {self.netlist_1}, {self.netlist_2}, {self.value} {self.unit})"
 
     def convert_unit(self, string):
+        #handle metric prefixes
         for prefix, prefix_value in self.unit_prefix.items():
             if prefix in string:
                 string = string.replace(prefix, prefix_value)
@@ -23,16 +32,14 @@ class BasicComponent:
 
         return string
 
-
 class Resistor(BasicComponent):
-    unit = "Ω"  # Define unit for resistors
+    unit = "Ω"
 
 class Capacitor(BasicComponent):
-    unit = "F"  # Define unit for capacitors
+    unit = "F"
 
 class Inductor(BasicComponent):
-    unit = "H"  # Henrys
+    unit = "H"
 
 class VoltageSource(BasicComponent):
-    unit = "V" #Volts
-
+    unit = "V"

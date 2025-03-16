@@ -1,7 +1,5 @@
-from scipy.sparse.linalg import spsolve
-
 from Components.BasicComponent import*
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, bmat
 import numpy as np
 
 class Circuit:
@@ -14,18 +12,16 @@ class Circuit:
         self.components= []
 
     def add_component_internal(self, component: BasicComponent):
-        """Add a component to the circuit."""
+        #add component in-place-sorted
         index = len(self.components)
         for i in range(len(self.components)):
             if component.component_name < self.components[i].component_name:
                 index = i
                 break
-
         self.components.insert(index, component)
 
-
-
     def add_component(self, name: str, node1, node2, value):
+        #add component according to the nomenaclature
         if name.lower().startswith("v"):
             self.add_component_internal(VoltageSource(name, node1, node2, value))
         elif name.lower().startswith("r"):
@@ -49,102 +45,108 @@ class Circuit:
                 no_of_sources += 1
         return no_of_sources
 
-    def create_A_matrix(self):
-
-        A = []
-        A_row = []
-        A_column = []
-        max_nodes = self.max_nodes()
+    def create_Z_matrix(self):
+        #creates A matrix in equation Ax=z
+        #has only passive elements
+        #elements connected to ground appear only on the diagonal
+        #elements not connected to ground are both on the diagonal and off-diagonal terms
+        Z = []
+        Z_row = []
+        Z_column = []
 
         for component in self.components:
             if component.component_name.startswith("R"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
                 value = component.value
 
-                if Node1 == 0 or Node2 == 0: #grounded
-                    A.append(1.0/value)
-                    A_row.append(max([Node1, Node2]) - 1)
-                    A_column.append(max([Node1, Node2]) - 1)
-
-                else: #not grounded
+                # connection to ground
+                if Node1 == 0 or Node2 == 0:
+                    Z.append(1.0/value)
+                    Z_row.append(max([Node1, Node2]) - 1)
+                    Z_column.append(max([Node1, Node2]) - 1)
+                # not grounded
+                else:
                     #diagolnal
-                    A.append(1.0/ value)
-                    A_row.append(Node1 - 1)
-                    A_column.append(Node1 - 1)
+                    Z.append(1.0/ value)
+                    Z_row.append(Node1 - 1)
+                    Z_column.append(Node1 - 1)
 
                     #diagolnal
-                    A.append(1.0 / value)
-                    A_row.append(Node2 - 1)
-                    A_column.append(Node2 - 1)
+                    Z.append(1.0 / value)
+                    Z_row.append(Node2 - 1)
+                    Z_column.append(Node2 - 1)
 
                     # Node1-Node2 term
-                    A.append(-1.0 / value)
-                    A_row.append(Node1 - 1)
-                    A_column.append(Node2 - 1)
+                    Z.append(-1.0 / value)
+                    Z_row.append(Node1 - 1)
+                    Z_column.append(Node2 - 1)
 
                     # Node2-Node1 term
-                    A.append(-1.0 / value)
-                    A_row.append(Node2 - 1)
-                    A_column.append(Node1 - 1)
+                    Z.append(-1.0 / value)
+                    Z_row.append(Node2 - 1)
+                    Z_column.append(Node1 - 1)
 
-        k = 0
+        self.Z = csr_matrix((Z, (Z_row, Z_column)))
+        print(self.Z)
+        return Z
+
+    def create_B_matrix(self):
+        B = []
+        B_row = []
+        B_column = []
+        n = 0
         for component in self.components:
             if component.component_name.startswith("V"):
                 Node1, Node2 = component.netlist_1, component.netlist_2
 
-                if Node1 == 0:  # if grounded to N1 ...
-                    # negative terminal
-                    A.append(-1)
-                    A_row.append(Node2 - 1)
-                    A_column.append(max_nodes + k)
+                #  Node1 is grounded, add Node2
+                if Node1 == 0:
+                    B.append(1)
+                    B_row.append(Node2 - 1)  #Node index
+                    B_column.append(n)  #voltage source index
 
-                    # negative terminal
-                    A.append(-1)
-                    A_row.append(max_nodes + k)
-                    A_column.append(Node2 - 1)
+                #  Node2 is grounded, add Node1
+                elif Node2 == 0:
+                    B.append(1)
+                    B_row.append(Node1 - 1) #Node index
+                    B_column.append(n) #voltage source index
 
-                    k += 1
+                # VS is not grounded
+                else:
+                    # Positive terminal (Node1)
+                    B.append(1)
+                    B_row.append(Node1 - 1)
+                    B_column.append(n)
 
-                elif Node2 == 0:  # if grounded to N2 ...
-                    # positive terminal
-                    A.append(1)
-                    A_row.append(Node1 - 1)
-                    A_column.append(max_nodes+ k)
+                    # Negative terminal (Node2)
+                    B.append(-1)
+                    B_row.append(Node2 - 1)
+                    B_column.append(n)
 
-                    # positive terminal
-                    A.append(1)
-                    A_row.append(max_nodes + k)
-                    A_column.append(Node1 - 1)
+                n += 1
 
-                    k += 1
+        self.B = csr_matrix((B, (B_row, B_column)))
+        print(self.B)
+        return self.B
 
-                else:  # if not grounded ...
-                    # positive terminal
-                    A.append(1)
-                    A_row.append(Node1 - 1)
-                    A_column.append(max_nodes + k)
+    def create_C_matrix(self):
+        self.C = self.B.transpose()
+        print (self.C)
+        return self.C
 
-                    # positive terminal
-                    A.append(1)
-                    A_row.append(max_nodes + k)
-                    A_column.append(Node1 - 1)
+    def create_d_matrix(self):
+        number_of_voltage_sources = self.get_no_of_sources("V")
+        self.D = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
+        print(self.D)
+        return self.D
 
-                    # negative terminal
-                    A.append(-1)
-                    A_row.append(Node2 - 1)
-                    A_column.append(max_nodes+ k)
-
-                    # negative terminal
-                    A.append(-1)
-                    A_row.append(max_nodes+ k)
-                    A_column.append(Node2 - 1)
-
-                    k += 1
-
-        A = csr_matrix((A, (A_row, A_column)))
-        return A
+    def create_A_matrix(self):
+        self.A = bmat([[self.Z, self.B], [self.C, self.D]], format="csr")
+        print(self.A)
+        return self.A
 
     def create_z_matrix(self):
+        #right-hand-side matrix containing know voltage sources
         max_nodes = self.max_nodes()
         number_of_voltage_sources = self.get_no_of_sources("V")
         number_of_current_sources = self.get_no_of_sources("I")
@@ -167,11 +169,12 @@ class Circuit:
         for component in self.components:
             Node1, Node2 = component.netlist_1, component.netlist_2
 
-            # detect connection to ground
+            #connection to ground
             if Node1 == 0:
                 a.append(-1)
                 a_row.append(Node2 - 1)
                 a_col.append(k)
+            # connection to ground
             elif Node2 == 0:
                 a.append(1)
                 a_row.append(Node1 - 1)
@@ -183,8 +186,6 @@ class Circuit:
                 a.append(-1)
                 a_row.append(Node2 - 1)
                 a_col.append(k)
-
-
             k += 1
 
         i_m = csr_matrix((a, (a_row, a_col)))
@@ -192,12 +193,9 @@ class Circuit:
 
     def get_OP(self, solved_matrix, incidence_matrix):
         result = ""
-
         max_nodes = self.max_nodes()
-        # print(solved_matrix)
-        # print(incidence_matrix)
+
         vb = incidence_matrix.transpose() * solved_matrix[:max_nodes, ...]
-        # print(vb)
         k = 0
         for component in self.components:
             result += f"{component.component_name}\n"

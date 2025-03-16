@@ -1,11 +1,8 @@
-from scipy.sparse.linalg import spsolve
-
 from Components.Netlist import Circuit
-
+from scipy.sparse.linalg import spsolve
 
 def read_netlist(filename):
     components_nomenaclature = ['V', 'I', 'R', 'C', 'L', 'E', 'F', 'G', 'H']
-    operation = ""
 
     my_circuit = Circuit("New Circle")
     with open(filename) as f:
@@ -15,22 +12,14 @@ def read_netlist(filename):
                 my_circuit.add_component(component_name, netlist_1, netlist_2, value)
 
             if line.startswith(".op"):
-                A = my_circuit.create_A_matrix()
-                print(f"A matrix: {A}")
-                z = my_circuit.create_z_matrix()
-                print(f"z matrix: {z}")
-
-                solution = spsolve(A, z)
-                print(f"solution:{solution}")
+                A_matrix = my_circuit.create_Z_matrix()
+                B_matrix = my_circuit.create_B_matrix()
+                C_matrix = my_circuit.create_C_matrix()
+                D_matrix = my_circuit.create_d_matrix()
+                A_matrix = my_circuit.create_A_matrix()
+                z_matrix = my_circuit.create_z_matrix()
+                x_matrix = spsolve(A_matrix, z_matrix)
                 i = my_circuit.incidence_matrix()
-                print(f"i:{i}")
-
-                print(my_circuit.get_OP(solution, i))
-
-    # return my_circuit
-
-
-
-
+                print(my_circuit.get_OP(x_matrix, i))
 
 
