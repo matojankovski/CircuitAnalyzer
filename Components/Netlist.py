@@ -1,3 +1,5 @@
+from scipy.sparse.linalg import spsolve
+
 from Components.BasicComponent import*
 from scipy.sparse import csr_matrix, bmat
 import numpy as np
@@ -10,6 +12,9 @@ class Circuit:
         self.ground = ground
         self.ground_name = 0
         self.components= []
+
+        self.G = None
+
 
     def add_component_internal(self, component: BasicComponent):
         #add component in-place-sorted
@@ -45,14 +50,14 @@ class Circuit:
                 no_of_sources += 1
         return no_of_sources
 
-    def create_Z_matrix(self):
+    def create_G_matrix(self):
         #creates A matrix in equation Ax=z
         #has only passive elements
         #elements connected to ground appear only on the diagonal
         #elements not connected to ground are both on the diagonal and off-diagonal terms
-        Z = []
-        Z_row = []
-        Z_column = []
+        G = []
+        G_row = []
+        G_column = []
 
         for component in self.components:
             if component.component_name.startswith("R"):
@@ -61,34 +66,33 @@ class Circuit:
 
                 # connection to ground
                 if Node1 == 0 or Node2 == 0:
-                    Z.append(1.0/value)
-                    Z_row.append(max([Node1, Node2]) - 1)
-                    Z_column.append(max([Node1, Node2]) - 1)
+                    G.append(1.0/value)
+                    G_row.append(max([Node1, Node2]) - 1)
+                    G_column.append(max([Node1, Node2]) - 1)
                 # not grounded
                 else:
                     #diagolnal
-                    Z.append(1.0/ value)
-                    Z_row.append(Node1 - 1)
-                    Z_column.append(Node1 - 1)
+                    G.append(1.0/ value)
+                    G_row.append(Node1 - 1)
+                    G_column.append(Node1 - 1)
 
                     #diagolnal
-                    Z.append(1.0 / value)
-                    Z_row.append(Node2 - 1)
-                    Z_column.append(Node2 - 1)
+                    G.append(1.0 / value)
+                    G_row.append(Node2 - 1)
+                    G_column.append(Node2 - 1)
 
                     # Node1-Node2 term
-                    Z.append(-1.0 / value)
-                    Z_row.append(Node1 - 1)
-                    Z_column.append(Node2 - 1)
+                    G.append(-1.0 / value)
+                    G_row.append(Node1 - 1)
+                    G_column.append(Node2 - 1)
 
                     # Node2-Node1 term
-                    Z.append(-1.0 / value)
-                    Z_row.append(Node2 - 1)
-                    Z_column.append(Node1 - 1)
+                    G.append(-1.0 / value)
+                    G_row.append(Node2 - 1)
+                    G_column.append(Node1 - 1)
 
-        self.Z = csr_matrix((Z, (Z_row, Z_column)))
-        print(self.Z)
-        return Z
+        self.G = csr_matrix((G, (G_row, G_column)))
+        # print(self.G)
 
     def create_B_matrix(self):
         B = []
@@ -141,9 +145,14 @@ class Circuit:
         return self.D
 
     def create_A_matrix(self):
-        self.A = bmat([[self.Z, self.B], [self.C, self.D]], format="csr")
-        print(self.A)
-        return self.A
+        self.create_z_matrix()
+        self.create_B_matrix()
+        self.create_C_matrix()
+        self.create_d_matrix()
+
+        self.A_matrix = bmat([[self.G, self.B], [self.C, self.D]], format="csr")
+        print(self.A_matrix)
+        # return self.A
 
     def create_z_matrix(self):
         #right-hand-side matrix containing know voltage sources
@@ -157,56 +166,59 @@ class Circuit:
                 z_matrix[max_nodes + k] += component.value
                 k += 1
 
-        z_matrix = np.array(z_matrix)
-        return z_matrix
+        self.z_matrix = np.array(z_matrix)
+        # print(self.z_matrix)
+        # return z_matrix
 
-    def incidence_matrix(self):
-        a = []
-        a_row = []
-        a_col = []
+    def solvematrix(self):
+        self.create_G_matrix()
+        self.create_A_matrix()
+        self.x_matrix  = spsolve(self.A_matrix, self.z_matrix)
+        # self.get_resistor_voltage()
+        self.get_OP()
 
-        k = 0
-        for component in self.components:
+
+    def get_resistor_voltage(self, component, k=0):
+        # for component in self.components:
+        if component.component_name.startswith("R"):
             Node1, Node2 = component.netlist_1, component.netlist_2
 
-            #connection to ground
-            if Node1 == 0:
-                a.append(-1)
-                a_row.append(Node2 - 1)
-                a_col.append(k)
-            # connection to ground
-            elif Node2 == 0:
-                a.append(1)
-                a_row.append(Node1 - 1)
-                a_col.append(k)
-            else:
-                a.append(1)
-                a_row.append(Node1 - 1)
-                a_col.append(k)
-                a.append(-1)
-                a_row.append(Node2 - 1)
-                a_col.append(k)
-            k += 1
+            V_n1 = self.x_matrix[Node1 - 1] if Node1 != 0 else 0  # Ground node = 0V
+            V_n2 = self.x_matrix[Node2 - 1] if Node2 != 0 else 0
+            V_R = V_n1 - V_n2
+            I_R = V_R / component.value
+            # print(f"Voltage on {component.component_name} is {V_R}, current: {I_R}")
+            return V_R, I_R
+        if component.component_name.startswith("V"):
+            num_nodes = self.max_nodes()
+            V_V = component.value
+            I_V = self.x_matrix[num_nodes + k]
+            # print(f"Voltage on {component.component_name} is {V_V}, current: {I_V}")
+            return V_V, I_V
+        return None
 
-        i_m = csr_matrix((a, (a_row, a_col)))
-        return i_m
-
-    def get_OP(self, solved_matrix, incidence_matrix):
+    def get_OP(self):
         result = ""
         max_nodes = self.max_nodes()
 
-        vb = incidence_matrix.transpose() * solved_matrix[:max_nodes, ...]
         k = 0
         for component in self.components:
             result += f"{component.component_name}\n"
-            result += f"{'Voltage:':<10}{('{:.3f}'.format(vb[k]).rstrip('0').rstrip('.')):>10} V\n"
+            if component.component_name.startswith("R"):
+                V_R, I_R = self.get_resistor_voltage(component)
+                result += f"{'Voltage:':<10}{('{:.3f}'.format(V_R).rstrip('0').rstrip('.')):>10} V\n"
+                result += f"{'Current:':<10}{('{:.3f}'.format(I_R).rstrip('0').rstrip('.')):>10} A\n"
+                result += f"{'Power:':<10}{('{:.3f}'.format(V_R*I_R).rstrip('0').rstrip('.')):>10} W\n"
+
+
             if component.component_name.startswith("V"):
-                result += f"{'Current:':<10}{('{:.5f}'.format(solved_matrix[k]).rstrip('0').rstrip('.')):>10} I\n"
-                result += f"{'Power:':<10}{('{:.5f}'.format(vb[k] * solved_matrix[k]).rstrip('0').rstrip('.')):>10} W\n"
-            else:
-                result += f"{'Current:':<10}{('{:.5f}'.format(vb[k] / component.value).rstrip('0').rstrip('.')):>10} I\n"
-                result += f"{'Power:':<10}{('{:.5f}'.format(vb[k] * vb[k] / component.value).rstrip('0').rstrip('.')):>10} W\n"
-            k += 1
+                V_V, I_V = self.get_resistor_voltage(component, k)
+                result += f"{'Voltage:':<10}{('{:.3f}'.format(V_V).rstrip('0').rstrip('.')):>10} V\n"
+                result += f"{'Current:':<10}{('{:.5f}'.format(I_V).rstrip('0').rstrip('.')):>10} A\n"
+                result += f"{'Power:':<10}{('{:.3f}'.format(V_V*I_V).rstrip('0').rstrip('.')):>10} W\n"
+                k += 1
+
+        print(result)
         return result
 
 

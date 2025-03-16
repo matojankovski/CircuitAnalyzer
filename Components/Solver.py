@@ -12,14 +12,15 @@ def read_netlist(filename):
                 my_circuit.add_component(component_name, netlist_1, netlist_2, value)
 
             if line.startswith(".op"):
-                A_matrix = my_circuit.create_Z_matrix()
-                B_matrix = my_circuit.create_B_matrix()
-                C_matrix = my_circuit.create_C_matrix()
-                D_matrix = my_circuit.create_d_matrix()
-                A_matrix = my_circuit.create_A_matrix()
-                z_matrix = my_circuit.create_z_matrix()
-                x_matrix = spsolve(A_matrix, z_matrix)
-                i = my_circuit.incidence_matrix()
-                print(my_circuit.get_OP(x_matrix, i))
+                # A_matrix = my_circuit.create_Z_matrix()
+                # B_matrix = my_circuit.create_B_matrix()
+                # C_matrix = my_circuit.create_C_matrix()
+                # D_matrix = my_circuit.create_d_matrix()
+                # A_matrix = my_circuit.create_A_matrix()
+                # z_matrix = my_circuit.create_z_matrix()
+                # x_matrix = spsolve(A_matrix, z_matrix)
+                my_circuit.solvematrix()
+                # i = my_circuit.incidence_matrix()
+                # print(my_circuit.get_OP(x_matrix, i))
 
 
