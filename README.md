@@ -12,11 +12,11 @@ MNA steps
   5. Solving of the system of n-1 unknowns
 
 Example Circuit:
-V1 1 0 32
-R1 1 2 2k
-R2 2 3 4k
-R3 2 0 8k
-V2 3 0 20
+V1 1 0 10
+R1 1 2 1k
+R2 2 3 1k
+R3 2 0 2k
+V2 3 0 10
 
 ![Screenshot from 2025-03-16 22-24-49](https://github.com/user-attachments/assets/12ec8f1c-fd6c-492f-8b7a-2108bfb24ebd)
 
