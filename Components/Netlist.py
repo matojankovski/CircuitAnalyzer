@@ -13,7 +13,15 @@ class Circuit:
         self.ground_name = 0
         self.components= []
 
-        self.G = None
+        self.G_matrix = None
+        self.A_matrix = None
+        self.B_matrix = None
+        self.C_matrix = None
+        self.D_matrix = None
+        self.z_matrix = None
+        self.x_matrix = None
+
+
 
 
     def add_component_internal(self, component: BasicComponent):
@@ -91,7 +99,7 @@ class Circuit:
                     G_row.append(Node2 - 1)
                     G_column.append(Node1 - 1)
 
-        self.G = csr_matrix((G, (G_row, G_column)))
+        self.G_matrix = csr_matrix((G, (G_row, G_column)))
         # print(self.G)
 
     def create_B_matrix(self):
@@ -129,20 +137,18 @@ class Circuit:
 
                 n += 1
 
-        self.B = csr_matrix((B, (B_row, B_column)))
-        print(self.B)
-        return self.B
+        self.B_matrix = csr_matrix((B, (B_row, B_column)))
+        # print(self.B_matrix)
 
     def create_C_matrix(self):
-        self.C = self.B.transpose()
-        print (self.C)
-        return self.C
+        self.C_matrix = self.B_matrix.transpose()
+        # print (self.C_matrix)
 
     def create_d_matrix(self):
         number_of_voltage_sources = self.get_no_of_sources("V")
-        self.D = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
-        print(self.D)
-        return self.D
+        self.D_matrix = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
+        # print(self.D)
+        return self.D_matrix
 
     def create_A_matrix(self):
         self.create_z_matrix()
@@ -150,9 +156,8 @@ class Circuit:
         self.create_C_matrix()
         self.create_d_matrix()
 
-        self.A_matrix = bmat([[self.G, self.B], [self.C, self.D]], format="csr")
-        print(self.A_matrix)
-        # return self.A
+        self.A_matrix = bmat([[self.G_matrix, self.B_matrix], [self.C_matrix, self.D_matrix]], format="csr")
+        # print(self.A_matrix)
 
     def create_z_matrix(self):
         #right-hand-side matrix containing know voltage sources
@@ -199,8 +204,6 @@ class Circuit:
 
     def get_OP(self):
         result = ""
-        max_nodes = self.max_nodes()
-
         k = 0
         for component in self.components:
             result += f"{component.component_name}\n"
