@@ -10,8 +10,8 @@ class Circuit:
 
         self.title = str(title)
         self.ground = ground
-        self.ground_name = 0
         self.components= []
+        self.operation = None
 
         self.G_matrix = None
         self.A_matrix = None
@@ -20,8 +20,6 @@ class Circuit:
         self.D_matrix = None
         self.z_matrix = None
         self.x_matrix = None
-
-
 
 
     def add_component_internal(self, component: BasicComponent):
@@ -43,6 +41,27 @@ class Circuit:
             self.add_component_internal(Capacitor(name, node1, node2, value))
         elif name.lower().startswith("l"):
             self.add_component_internal(Inductor(name, node1, node2, value))
+
+
+    def validate_nodes(self):
+        node_counts = {}
+        for component in self.components:
+            if component.netlist_1 not in node_counts:
+                node_counts[component.netlist_1] = 0
+            if component.netlist_2 not in node_counts:
+                node_counts[component.netlist_2] = 0
+            node_counts[component.netlist_1] += 1
+            node_counts[component.netlist_2] += 1
+
+        invalid_nodes = []
+        for node, count in node_counts.items():
+            if count == 1 and node != self.ground:
+                invalid_nodes.append(node)
+
+        if invalid_nodes:
+            raise ValueError(f"Error: Node no. {invalid_nodes} appears only once")
+
+        return None
 
     def max_nodes(self):
         max_node_no = 0

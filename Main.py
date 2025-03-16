@@ -1,4 +1,5 @@
-from Components.Solver import read_netlist
+from Components.Solver import solve_circuit
 
 if __name__ == '__main__':
-    read_netlist("TestCircuit1.cir")
+    solve_circuit("TestCircuit2.cir")
+

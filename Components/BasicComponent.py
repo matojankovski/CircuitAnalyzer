@@ -25,6 +25,10 @@ class BasicComponent:
 
     def convert_unit(self, string):
         #handle metric prefixes
+        # try:
+        #     if not isinstance(string, str):
+        #         raise TypeError("Input must be string")
+
         for prefix, prefix_value in self.unit_prefix.items():
             if prefix in string:
                 string = string.replace(prefix, prefix_value)
