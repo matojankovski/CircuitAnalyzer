@@ -42,7 +42,6 @@ class Circuit:
         elif name.lower().startswith("l"):
             self.add_component_internal(Inductor(name, node1, node2, value))
 
-
     def validate_nodes(self):
         node_counts = {}
         for component in self.components:
@@ -57,7 +56,8 @@ class Circuit:
         for node, count in node_counts.items():
             if count == 1 and node != self.ground:
                 invalid_nodes.append(node)
-
+        print(node_counts)
+        print(invalid_nodes)
         if invalid_nodes:
             raise ValueError(f"Error: Node no. {invalid_nodes} appears only once")
 
@@ -119,7 +119,7 @@ class Circuit:
                     G_column.append(Node1 - 1)
 
         self.G_matrix = csr_matrix((G, (G_row, G_column)))
-        # print(self.G)
+        print(self.G_matrix)
 
     def create_B_matrix(self):
         B = []
@@ -157,16 +157,16 @@ class Circuit:
                 n += 1
 
         self.B_matrix = csr_matrix((B, (B_row, B_column)))
-        # print(self.B_matrix)
+        print(self.B_matrix)
 
     def create_C_matrix(self):
         self.C_matrix = self.B_matrix.transpose()
-        # print (self.C_matrix)
+        print (self.C_matrix)
 
     def create_d_matrix(self):
         number_of_voltage_sources = self.get_no_of_sources("V")
         self.D_matrix = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
-        # print(self.D)
+        print(self.D_matrix)
         return self.D_matrix
 
     def create_A_matrix(self):
@@ -176,7 +176,7 @@ class Circuit:
         self.create_d_matrix()
 
         self.A_matrix = bmat([[self.G_matrix, self.B_matrix], [self.C_matrix, self.D_matrix]], format="csr")
-        # print(self.A_matrix)
+        print(self.A_matrix)
 
     def create_z_matrix(self):
         #right-hand-side matrix containing know voltage sources
@@ -191,7 +191,7 @@ class Circuit:
                 k += 1
 
         self.z_matrix = np.array(z_matrix)
-        # print(self.z_matrix)
+        print(self.z_matrix)
         # return z_matrix
 
     def solvematrix(self):
@@ -207,7 +207,7 @@ class Circuit:
         if component.component_name.startswith("R"):
             Node1, Node2 = component.netlist_1, component.netlist_2
 
-            V_n1 = self.x_matrix[Node1 - 1] if Node1 != 0 else 0  # Ground node = 0V
+            V_n1 = self.x_matrix[Node1 - 1] if Node1 != 0 else 0
             V_n2 = self.x_matrix[Node2 - 1] if Node2 != 0 else 0
             V_R = V_n1 - V_n2
             I_R = V_R / component.value

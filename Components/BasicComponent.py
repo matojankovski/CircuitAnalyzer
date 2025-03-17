@@ -2,13 +2,9 @@ class BasicComponent:
     unit = ""  # Default unit (empty)
     unit_prefix = {'meg': 'e6', 'f': 'e-15', 'p': 'e-12', 'n': 'e-9', 'u': 'e-6', 'm': 'e-3', 'k': 'e3', 'g': 'e9',
                         't': 'e12'}
+    component_prefix = ["R", "V"]
 
     def __init__(self, component_name, netlist_1, netlist_2, value):
-        #ensure that nodes have different numbers
-        if netlist_1 == netlist_2:
-            raise ValueError(
-                f"Invalid component connection: netlist_1 ({netlist_1}) and netlist_2 ({netlist_2}) must be different.")
-
         self.component_name = str(component_name)
         self.netlist_1 = int(netlist_1)
         self.netlist_2 = int(netlist_2)
@@ -16,6 +12,13 @@ class BasicComponent:
 
         if self.value < 0 and not isinstance(self, VoltageSource):
             raise ValueError(f"Invalid value for {self.component_name}: {self.value}. Value cannot be negative.")
+
+            # ensure that nodes have different numbers
+        if netlist_1 == netlist_2:
+            raise ValueError(
+                f"Invalid component connection: netlist_1 ({netlist_1}) and netlist_2 ({netlist_2}) must be different.")
+        if not component_name.startswith(tuple(self.component_prefix)):
+            raise ValueError(f"Invalid value component name.")
 
     def __str__(self):
         return f"{self.component_name} {self.netlist_1} {self.netlist_2} {self.value} {self.unit}"
