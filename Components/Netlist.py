@@ -1,8 +1,9 @@
 from scipy.sparse.linalg import spsolve
 import warnings
-from Components.BasicComponent import*
 from scipy.sparse import csr_matrix, bmat
 import numpy as np
+from Components.BasicComponent import BasicComponent, VoltageSource, Resistor, Capacitor, Inductor
+
 
 class Circuit:
 
@@ -23,10 +24,11 @@ class Circuit:
 
 
     def add_component_internal(self, component: BasicComponent):
-        #add component in-place-sorted
         existing_names = {comp.component_name for comp in self.components}
         if component.component_name in existing_names:
             warnings.warn(f"Warning: Duplicate component name detected: {component.component_name}")
+
+        # add component in-place-sorted
         index = len(self.components)
         for i in range(len(self.components)):
             if component.component_name < self.components[i].component_name:
@@ -59,8 +61,6 @@ class Circuit:
         for node, count in node_counts.items():
             if count == 1 and node != self.ground:
                 invalid_nodes.append(node)
-        print(node_counts)
-        print(invalid_nodes)
         if invalid_nodes:
             raise ValueError(f"Error: Node no. {invalid_nodes} appears only once")
 
@@ -122,12 +122,14 @@ class Circuit:
                     G_column.append(Node1 - 1)
 
         self.G_matrix = csr_matrix((G, (G_row, G_column)))
-        print(self.G_matrix)
+        print(f"G matrix is {self.G_matrix}")
 
     def create_B_matrix(self):
         B = []
         B_row = []
         B_column = []
+        max_node_no = self.max_nodes()
+        number_of_voltage_sources = self.get_no_of_sources("V")
         n = 0
         for component in self.components:
             if component.component_name.startswith("V"):
@@ -158,28 +160,32 @@ class Circuit:
                     B_column.append(n)
 
                 n += 1
-
-        self.B_matrix = csr_matrix((B, (B_row, B_column)))
-        print(self.B_matrix)
+        print(f"B, {B}, B_row {B_row}, B_coll {B_column}")
+        self.B_matrix = csr_matrix((B, (B_row, B_column)), shape=(max_node_no, number_of_voltage_sources))
+        print(f"B matrix is {self.B_matrix}")
 
     def create_C_matrix(self):
         self.C_matrix = self.B_matrix.transpose()
-        print (self.C_matrix)
+        print (f"C matrix is {self.C_matrix}")
 
     def create_d_matrix(self):
         number_of_voltage_sources = self.get_no_of_sources("V")
         self.D_matrix = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
-        print(self.D_matrix)
-        return self.D_matrix
+        print(f"D matrix is {self.D_matrix}")
+        # return self.D_matrix
 
     def create_A_matrix(self):
         self.create_z_matrix()
         self.create_B_matrix()
         self.create_C_matrix()
         self.create_d_matrix()
+        print("G shape:", self.G_matrix.shape)
+        print("B shape:", self.B_matrix.shape)
+        print("C shape:", self.C_matrix.shape)
+        print("D shape:", self.D_matrix.shape)
 
         self.A_matrix = bmat([[self.G_matrix, self.B_matrix], [self.C_matrix, self.D_matrix]], format="csr")
-        print(self.A_matrix)
+        print(f"A matrix is :{self.A_matrix}")
 
     def create_z_matrix(self):
         #right-hand-side matrix containing know voltage sources
@@ -194,8 +200,8 @@ class Circuit:
                 k += 1
 
         self.z_matrix = np.array(z_matrix)
-        print(self.z_matrix)
-        # return z_matrix
+        print(f" z_matrix/RHS is {self.z_matrix}")
+        return z_matrix
 
     def solvematrix(self):
         self.create_G_matrix()

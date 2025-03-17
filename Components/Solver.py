@@ -23,7 +23,7 @@ def solve_circuit(filename):
                 my_circuit.add_component(component_name, netlist_1, netlist_2, value)
             except ValueError:
                 raise ValueError(f"Error parsing line: {line}")
-
+        print(my_circuit.components)
         my_circuit.validate_nodes()
         my_circuit.solvematrix()
 
