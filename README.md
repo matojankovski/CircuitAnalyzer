@@ -20,5 +20,26 @@ V2 3 0 10
 
 ![Screenshot from 2025-03-16 22-24-49](https://github.com/user-attachments/assets/12ec8f1c-fd6c-492f-8b7a-2108bfb24ebd)
 
+Equations for circuit can be shown as:
+  Ax = z
+
+Matrix A consists of 4 matrices, (m+n)x(m+n), where n is the number of nodes, and m is the number of independent voltage sources. Generally it can be described as:
+
+xxx
+
+G matrix (n x n) is determined by the interconnections between the passive circuit elements.
+B matrix (n x m) is determined by the connection of the voltage sources.
+C matrix (m x n) is determined by the connection of the voltage sources. B and C matrices are closely related.
+D matrix (m x m) is zero if only independent sources are considered.
+
+Matrix x is (m + n) x 1 and consist of unknown quantities, unknown nodal voltages and unknown current through the voltage sources.
+
+Matrix z is (m + n) x 1 and consist of the sum of the currents throught the passive elements and values of the independent voltage sources.
+
+By following the rules for the creation of matrices we can create matrix Ax=z that can be calculated by using SciPy methods for calculation of sparse matrices.
+
+
+
+
 
 
