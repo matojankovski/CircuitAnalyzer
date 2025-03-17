@@ -1,5 +1,4 @@
 from Components.Netlist import Circuit
-from scipy.sparse.linalg import spsolve
 
 def solve_circuit(filename):
     components_nomenaclature = ['V', 'I', 'R', 'C', 'L', 'E', 'F', 'G', 'H']

@@ -1,5 +1,5 @@
 from scipy.sparse.linalg import spsolve
-
+import warnings
 from Components.BasicComponent import*
 from scipy.sparse import csr_matrix, bmat
 import numpy as np
@@ -24,6 +24,9 @@ class Circuit:
 
     def add_component_internal(self, component: BasicComponent):
         #add component in-place-sorted
+        existing_names = {comp.component_name for comp in self.components}
+        if component.component_name in existing_names:
+            warnings.warn(f"Warning: Duplicate component name detected: {component.component_name}")
         index = len(self.components)
         for i in range(len(self.components)):
             if component.component_name < self.components[i].component_name:
