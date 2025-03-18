@@ -1,5 +1,13 @@
 # Simple CircuitAnalyzer 
 
+## How to run
+First install dependencies
+```pip install -r requirements.txt```
+
+To run the project
+```python main.py TestCircuit1.cir```
+
+
 Circuit Analyzer is based on SPICE. It incorporates Modified Nodal Analaysis (MNA). Any circuit can be represented by sets of equations. 
 The common methods to create these sets of equations are the node voltage method and the loop-current method. MNA allows easier algorithmic
 solution.
@@ -32,8 +40,11 @@ Matrix A consists of 4 matrices, $(m+n)x(m+n)$, where n is the number of nodes, 
 xxx
 
 G matrix $(n × n)$ is determined by the interconnections between the passive circuit elements.
+
 B matrix $(n × m)$ is determined by the connection of the voltage sources.
-C matrix $(m × n)$ is determined by the connection of the voltage sources. B and C matrices are closely related.
+
+C matrix $(m × n)$ is determined by the connection of the voltage sources. C matrix is transposed B matrix.
+
 D matrix $(m × m)$ is zero if only independent sources are considered.
 
 Matrix x is  $(m + n) × 1$ and consist of unknown quantities, unknown nodal voltages and unknown current through the voltage sources.
