@@ -14,7 +14,7 @@ class BasicComponent:
             raise ValueError(f"Invalid value for {self.component_name}: {self.value}. Value cannot be negative.")
 
             # ensure that nodes have different numbers
-        if netlist_1 == netlist_2:
+        if self.netlist_1 == self.netlist_2:
             raise ValueError(
                 f"Invalid component connection: netlist_1 ({netlist_1}) and netlist_2 ({netlist_2}) must be different.")
         if not component_name.startswith(tuple(self.component_prefix)):

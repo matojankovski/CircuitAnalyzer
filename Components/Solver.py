@@ -21,8 +21,10 @@ def solve_circuit(filename):
             try:
                 component_name, netlist_1, netlist_2, value = line.split()
                 my_circuit.add_component(component_name, netlist_1, netlist_2, value)
-            except ValueError:
-                raise ValueError(f"Error parsing line: {line}")
+            except ValueError as ex:
+                raise ValueError(f"Error parsing line {line} Value error: {ex}")
+
+def validate
         print(my_circuit.components)
         my_circuit.validate_nodes()
         my_circuit.solvematrix()

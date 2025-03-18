@@ -2,7 +2,8 @@ from scipy.sparse.linalg import spsolve
 import warnings
 from scipy.sparse import csr_matrix, bmat
 import numpy as np
-from Components.BasicComponent import BasicComponent, VoltageSource, Resistor, Capacitor, Inductor
+
+from Components.BasicComponent import *
 
 
 class Circuit:
@@ -11,7 +12,7 @@ class Circuit:
 
         self.title = str(title)
         self.ground = ground
-        self.components= []
+        self.components = []
         self.operation = None
 
         self.G_matrix = None
@@ -22,6 +23,7 @@ class Circuit:
         self.z_matrix = None
         self.x_matrix = None
 
+        self.max_n = None
 
     def add_component_internal(self, component: BasicComponent):
         existing_names = {comp.component_name for comp in self.components}
@@ -37,7 +39,7 @@ class Circuit:
         self.components.insert(index, component)
 
     def add_component(self, name: str, node1, node2, value):
-        #add component according to the nomenaclature
+        # add component according to the nomenaclature
         if name.lower().startswith("v"):
             self.add_component_internal(VoltageSource(name, node1, node2, value))
         elif name.lower().startswith("r"):
@@ -67,10 +69,14 @@ class Circuit:
         return None
 
     def max_nodes(self):
+        if self.max_n:
+            return self.max_n
+
         max_node_no = 0
         for component in self.components:
             max_node_no = max(max_node_no, max(component.netlist_1, component.netlist_2))
 
+        self.max_n = max_node_no
         return max_node_no
 
     def get_no_of_sources(self, source: str):
@@ -81,10 +87,10 @@ class Circuit:
         return no_of_sources
 
     def create_G_matrix(self):
-        #creates A matrix in equation Ax=z
-        #has only passive elements
-        #elements connected to ground appear only on the diagonal
-        #elements not connected to ground are both on the diagonal and off-diagonal terms
+        # creates A matrix in equation Ax=z
+        # has only passive elements
+        # elements connected to ground appear only on the diagonal
+        # elements not connected to ground are both on the diagonal and off-diagonal terms
         G = []
         G_row = []
         G_column = []
@@ -96,17 +102,17 @@ class Circuit:
 
                 # connection to ground
                 if Node1 == 0 or Node2 == 0:
-                    G.append(1.0/value)
+                    G.append(1.0 / value)
                     G_row.append(max([Node1, Node2]) - 1)
                     G_column.append(max([Node1, Node2]) - 1)
                 # not grounded
                 else:
-                    #diagolnal
-                    G.append(1.0/ value)
+                    # diagolnal
+                    G.append(1.0 / value)
                     G_row.append(Node1 - 1)
                     G_column.append(Node1 - 1)
 
-                    #diagolnal
+                    # diagolnal
                     G.append(1.0 / value)
                     G_row.append(Node2 - 1)
                     G_column.append(Node2 - 1)
@@ -138,14 +144,14 @@ class Circuit:
                 #  Node1 is grounded, add Node2
                 if Node1 == 0:
                     B.append(1)
-                    B_row.append(Node2 - 1)  #Node index
-                    B_column.append(n)  #voltage source index
+                    B_row.append(Node2 - 1)  # Node index
+                    B_column.append(n)  # voltage source index
 
                 #  Node2 is grounded, add Node1
                 elif Node2 == 0:
                     B.append(1)
-                    B_row.append(Node1 - 1) #Node index
-                    B_column.append(n) #voltage source index
+                    B_row.append(Node1 - 1)  # Node index
+                    B_column.append(n)  # voltage source index
 
                 # VS is not grounded
                 else:
@@ -166,7 +172,7 @@ class Circuit:
 
     def create_C_matrix(self):
         self.C_matrix = self.B_matrix.transpose()
-        print (f"C matrix is {self.C_matrix}")
+        print(f"C matrix is {self.C_matrix}")
 
     def create_d_matrix(self):
         number_of_voltage_sources = self.get_no_of_sources("V")
@@ -188,7 +194,7 @@ class Circuit:
         print(f"A matrix is :{self.A_matrix}")
 
     def create_z_matrix(self):
-        #right-hand-side matrix containing know voltage sources
+        # right-hand-side matrix containing know voltage sources
         max_nodes = self.max_nodes()
         number_of_voltage_sources = self.get_no_of_sources("V")
         number_of_current_sources = self.get_no_of_sources("I")
@@ -206,12 +212,11 @@ class Circuit:
     def solvematrix(self):
         self.create_G_matrix()
         self.create_A_matrix()
-        self.x_matrix  = spsolve(self.A_matrix, self.z_matrix)
+        self.x_matrix = spsolve(self.A_matrix, self.z_matrix)
         # self.get_resistor_voltage()
         self.get_OP()
 
-
-    def get_resistor_voltage(self, component, k=0):
+    def get_voltage_current(self, component, k=0):
         # for component in self.components:
         if component.component_name.startswith("R"):
             Node1, Node2 = component.netlist_1, component.netlist_2
@@ -222,7 +227,7 @@ class Circuit:
             I_R = V_R / component.value
             # print(f"Voltage on {component.component_name} is {V_R}, current: {I_R}")
             return V_R, I_R
-        if component.component_name.startswith("V"):
+        elif component.component_name.startswith("V"):
             num_nodes = self.max_nodes()
             V_V = component.value
             I_V = self.x_matrix[num_nodes + k]
@@ -236,33 +241,17 @@ class Circuit:
         for component in self.components:
             result += f"{component.component_name}\n"
             if component.component_name.startswith("R"):
-                V_R, I_R = self.get_resistor_voltage(component)
+                V_R, I_R = self.get_voltage_current(component)
                 result += f"{'Voltage:':<10}{('{:.3f}'.format(V_R).rstrip('0').rstrip('.')):>10} V\n"
                 result += f"{'Current:':<10}{('{:.3f}'.format(I_R).rstrip('0').rstrip('.')):>10} A\n"
-                result += f"{'Power:':<10}{('{:.3f}'.format(V_R*I_R).rstrip('0').rstrip('.')):>10} W\n"
-
+                result += f"{'Power:':<10}{('{:.3f}'.format(V_R * I_R).rstrip('0').rstrip('.')):>10} W\n"
 
             if component.component_name.startswith("V"):
-                V_V, I_V = self.get_resistor_voltage(component, k)
+                V_V, I_V = self.get_voltage_current(component, k)
                 result += f"{'Voltage:':<10}{('{:.3f}'.format(V_V).rstrip('0').rstrip('.')):>10} V\n"
                 result += f"{'Current:':<10}{('{:.5f}'.format(I_V).rstrip('0').rstrip('.')):>10} A\n"
-                result += f"{'Power:':<10}{('{:.3f}'.format(V_V*I_V).rstrip('0').rstrip('.')):>10} W\n"
+                result += f"{'Power:':<10}{('{:.3f}'.format(V_V * I_V).rstrip('0').rstrip('.')):>10} W\n"
                 k += 1
 
         print(result)
         return result
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
