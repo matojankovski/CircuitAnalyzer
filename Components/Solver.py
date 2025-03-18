@@ -1,13 +1,13 @@
 from Components.Netlist import Circuit
 
-def solve_circuit(filename):
-    components_nomenaclature = ['V', 'I', 'R', 'C', 'L', 'E', 'F', 'G', 'H']
 
+def parse_file(filename):
+    components_nomenaclature = ['V', 'I', 'R', 'C', 'L', 'E', 'F', 'G', 'H']
     my_circuit = Circuit("New Circle")
     with open(filename) as f:
         for line in f:
             line = line.strip()
-            #ignore empty lines
+            # ignore empty lines
             if not line or line.startswith("*"):
                 continue
 
@@ -24,10 +24,4 @@ def solve_circuit(filename):
             except ValueError as ex:
                 raise ValueError(f"Error parsing line {line} Value error: {ex}")
 
-def validate
-        print(my_circuit.components)
-        my_circuit.validate_nodes()
-        my_circuit.solvematrix()
-
-
-
+    return my_circuit
