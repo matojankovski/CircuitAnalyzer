@@ -126,7 +126,7 @@ class Circuit:
                     G.append(-1.0 / value)
                     G_row.append(Node2 - 1)
                     G_column.append(Node1 - 1)
-        print(G, G_row, G_column)
+        # print(G, G_row, G_column)
         self.G_matrix = csr_matrix((G, (G_row, G_column)))
         # print(f"G matrix is {self.G_matrix}")
 
