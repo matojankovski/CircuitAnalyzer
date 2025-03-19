@@ -1,6 +1,6 @@
 import sys
 
-from Components.Solver import parse_file
+from Components.Solver import parse_file, read_file
 from Components.Netlist import Circuit
 
 
@@ -11,7 +11,8 @@ if __name__ == '__main__':
         exit(0)
     filename = sys.argv[1]
     try:
-        circuit = parse_file(filename)
+        netlist = read_file(filename)
+        circuit = parse_file(netlist)
         circuit.validate_nodes()
         circuit.solvematrix()
         circuit.get_OP()
