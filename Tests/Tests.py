@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
+from Components.Solver import read_file  # Replace with the actual module name
 
 from Components.BasicComponent import BasicComponent, Resistor, VoltageSource
 from Components.Netlist import Circuit
@@ -62,3 +63,9 @@ def test_validate_nodes(test_circuit1):
 #     # print(test_circuit2.G_matrix)
 #     assert test_circuit_2.G_matrix == expected_G_matrix
 
+
+def test_read_file(tmp_path):
+    test_file = tmp_path / "sample.txt"
+    test_file.write_text("V1 1 0 10\nR2 1 2 10k\nR1 2 0 10k\nV2 2 0 20\n.op")
+    result = read_file(test_file)
+    assert result == "V1 1 0 10\nR2 1 2 10k\nR1 2 0 10k\nV2 2 0 20\n.op"
