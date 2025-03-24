@@ -2,6 +2,8 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix, bmat
 import numpy as np
 import warnings
+import time
+import threading
 
 from Components.BasicComponent import *
 
@@ -24,6 +26,7 @@ class Circuit:
         self.x_matrix = None
 
         self.max_n = None
+        self.t = None
 
     def add_component_internal(self, component: BasicComponent):
         existing_names = {comp.component_name for comp in self.components}
@@ -91,6 +94,7 @@ class Circuit:
         # has only passive elements
         # elements connected to ground appear only on the diagonal
         # elements not connected to ground are both on the diagonal and off-diagonal terms
+        self.t = time.time()
         G = []
         G_row = []
         G_column = []
@@ -128,9 +132,12 @@ class Circuit:
                     G_column.append(Node1 - 1)
         # print(G, G_row, G_column)
         self.G_matrix = csr_matrix((G, (G_row, G_column)))
+        # print("G matrix done in:", time.time() - t)
+
         # print(f"G matrix is {self.G_matrix}")
 
     def create_B_matrix(self):
+        # t = time.time()
         B = []
         B_row = []
         B_column = []
@@ -169,22 +176,44 @@ class Circuit:
         # print(f"B, {B}, B_row {B_row}, B_coll {B_column}")
         self.B_matrix = csr_matrix((B, (B_row, B_column)), shape=(max_node_no, number_of_voltage_sources))
         # print(f"B matrix is {self.B_matrix}")
+        # print("B matrix done in:", time.time() - t)
+
 
     def create_C_matrix(self):
+        # t = time.time()
         self.C_matrix = self.B_matrix.transpose()
         # print(f"C matrix is {self.C_matrix}")
+        # print("C matrix done in:", time.time() - t)
 
     def create_d_matrix(self):
+        # t = time.time()
         number_of_voltage_sources = self.get_no_of_sources("V")
         self.D_matrix = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
         # print(f"D matrix is {self.D_matrix}")
         # return self.D_matrix
+        # print("D matrix done in:", time.time() - t)
+
 
     def create_A_matrix(self):
+        # t1 = threading.Thread(target=self.create_z_matrix)
+        # t2 = threading.Thread(target=self.create_B_matrix)
+        # t3 = threading.Thread(target=self.create_C_matrix)
+        # t4 = threading.Thread(target=self.create_d_matrix)
+        # t1.start()
+        # t2.start()
+        # t3.start()
+        # t4.start()
+        #
+        # t1.join()
+        # t2.join()
+        # t3.join()
+        # t4.join()
         self.create_z_matrix()
         self.create_B_matrix()
         self.create_C_matrix()
         self.create_d_matrix()
+        print("matrixes done in:", time.time() - self.t)
+
         # print("G shape:", self.G_matrix.shape)
         # print("B shape:", self.B_matrix.shape)
         # print("C shape:", self.C_matrix.shape)
