@@ -230,6 +230,8 @@ class Circuit:
 
     def get_voltage_current(self, component, k=0):
         # for component in self.components:
+        number_of_voltage_sources = self.get_no_of_sources("V")
+        number_of_current_sources = self.get_no_of_sources("I")
         if component.component_name.startswith("R"):
             Node1, Node2 = component.netlist_1, component.netlist_2
 
@@ -246,10 +248,12 @@ class Circuit:
             # print(f"Voltage on {component.component_name} is {V_V}, current: {I_V}")
             return V_V, I_V
         elif component.component_name.startswith("I"):
-            num_nodes = self.max_nodes()
-            V_I = self.x_matrix[num_nodes + k]
+            Node1, Node2 = component.netlist_1, component.netlist_2
+            V_n1 = self.x_matrix[Node1 - 1] if Node1 != 0 else 0
+            V_n2 = self.x_matrix[Node2 - 1] if Node2 != 0 else 0
+            V_I  = V_n1 - V_n2
             I_I = component.value
-            print(f"Voltage on {component.component_name} is {V_I}, current: {I_I}")
+            # print(f"Voltage on {component.component_name} is {V_I}, current: {I_I}")
             return V_I, I_I
         return None
 
@@ -276,7 +280,6 @@ class Circuit:
                 result += f"{'Voltage:':<10}{('{:.3f}'.format(V_I).rstrip('0').rstrip('.')):>10} V\n"
                 result += f"{'Current:':<10}{('{:.5f}'.format(I_I).rstrip('0').rstrip('.')):>10} A\n"
                 result += f"{'Power:':<10}{('{:.3f}'.format(V_I * I_I).rstrip('0').rstrip('.')):>10} W\n"
-                # k += 1
 
         print(result)
         # return result
