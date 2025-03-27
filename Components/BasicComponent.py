@@ -2,7 +2,7 @@ class BasicComponent:
     unit = ""  # Default unit (empty)
     unit_prefix = {'meg': 'e6', 'f': 'e-15', 'p': 'e-12', 'n': 'e-9', 'u': 'e-6', 'm': 'e-3', 'k': 'e3', 'g': 'e9',
                         't': 'e12'}
-    component_prefix = ["R", "V"]
+    component_prefix = ["R", "V", "I"]
 
     def __init__(self, component_name, netlist_1, netlist_2, value):
         self.component_name = str(component_name)
@@ -50,3 +50,6 @@ class Inductor(BasicComponent):
 
 class VoltageSource(BasicComponent):
     unit = "V"
+
+class CurrentSource(BasicComponent):
+    unit = "A"
