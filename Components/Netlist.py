@@ -48,6 +48,8 @@ class Circuit:
             self.add_component_internal(Capacitor(name, node1, node2, value))
         elif name.lower().startswith("l"):
             self.add_component_internal(Inductor(name, node1, node2, value))
+        elif name.lower().startswith("i"):
+            self.add_component_internal(CurrentSource(name, node1, node2, value))
 
     def validate_nodes(self):
         node_counts = {}
@@ -128,7 +130,7 @@ class Circuit:
                     G_column.append(Node1 - 1)
         # print(G, G_row, G_column)
         self.G_matrix = csr_matrix((G, (G_row, G_column)))
-        # print(f"G matrix is {self.G_matrix}")
+        print(f"G matrix is {self.G_matrix}")
 
     def create_B_matrix(self):
         B = []
@@ -168,49 +170,60 @@ class Circuit:
                 n += 1
         # print(f"B, {B}, B_row {B_row}, B_coll {B_column}")
         self.B_matrix = csr_matrix((B, (B_row, B_column)), shape=(max_node_no, number_of_voltage_sources))
-        # print(f"B matrix is {self.B_matrix}")
+        print(f"B matrix is {self.B_matrix}")
 
     def create_C_matrix(self):
         self.C_matrix = self.B_matrix.transpose()
-        # print(f"C matrix is {self.C_matrix}")
+        print(f"C matrix is {self.C_matrix}")
 
     def create_d_matrix(self):
         number_of_voltage_sources = self.get_no_of_sources("V")
         self.D_matrix = csr_matrix((number_of_voltage_sources, number_of_voltage_sources))
-        # print(f"D matrix is {self.D_matrix}")
+        print(f"D matrix is {self.D_matrix}")
         # return self.D_matrix
 
     def create_A_matrix(self):
-        self.create_z_matrix()
+        self.create_G_matrix()
         self.create_B_matrix()
         self.create_C_matrix()
         self.create_d_matrix()
-        # print("G shape:", self.G_matrix.shape)
-        # print("B shape:", self.B_matrix.shape)
-        # print("C shape:", self.C_matrix.shape)
-        # print("D shape:", self.D_matrix.shape)
+        print("G shape:", self.G_matrix.shape)
+        print("B shape:", self.B_matrix.shape)
+        print("C shape:", self.C_matrix.shape)
+        print("D shape:", self.D_matrix.shape)
 
         self.A_matrix = bmat([[self.G_matrix, self.B_matrix], [self.C_matrix, self.D_matrix]], format="csr")
-        # print(f"A matrix is :{self.A_matrix}")
+        print(f"A matrix is :{self.A_matrix}")
 
     def create_z_matrix(self):
         #contains know voltage/current sources
         max_nodes = self.max_nodes()
         number_of_voltage_sources = self.get_no_of_sources("V")
         number_of_current_sources = self.get_no_of_sources("I")
-        z_matrix = [0] * (max_nodes + number_of_voltage_sources + number_of_current_sources)
+        z_matrix = [0] * (max_nodes + number_of_voltage_sources)
         k = 0
         for component in self.components:
             if component.component_name.startswith("V"):
                 z_matrix[max_nodes + k] += component.value
                 k += 1
+            if component.component_name.startswith("I"):
+                Node1, Node2 = component.netlist_1, component.netlist_2
+                if Node1 == 0:
+                    z_matrix[Node2 - 1] += component.value
+
+                elif Node2 == 0:
+                    z_matrix[Node1 - 1] += component.value
+
+                else:
+                    z_matrix[Node1 - 1] -= component.value
+                    z_matrix[Node2 - 1] += component.value
 
         self.z_matrix = np.array(z_matrix)
-        # print(f" z_matrix/RHS is {self.z_matrix}")
-        return z_matrix
+        print(f" z_matrix/RHS is {self.z_matrix}")
+        # return z_matrix
 
     def solvematrix(self):
-        self.create_G_matrix()
+        self.create_z_matrix()
         self.create_A_matrix()
         self.x_matrix = spsolve(self.A_matrix, self.z_matrix)
         # self.get_resistor_voltage()
@@ -232,6 +245,12 @@ class Circuit:
             I_V = self.x_matrix[num_nodes + k]
             # print(f"Voltage on {component.component_name} is {V_V}, current: {I_V}")
             return V_V, I_V
+        elif component.component_name.startswith("I"):
+            num_nodes = self.max_nodes()
+            V_I = self.x_matrix[num_nodes + k]
+            I_I = component.value
+            print(f"Voltage on {component.component_name} is {V_I}, current: {I_I}")
+            return V_I, I_I
         return None
 
     def get_OP(self):
@@ -251,6 +270,13 @@ class Circuit:
                 result += f"{'Current:':<10}{('{:.5f}'.format(I_V).rstrip('0').rstrip('.')):>10} A\n"
                 result += f"{'Power:':<10}{('{:.3f}'.format(V_V * I_V).rstrip('0').rstrip('.')):>10} W\n"
                 k += 1
+
+            if component.component_name.startswith("I"):
+                V_I, I_I = self.get_voltage_current(component, k)
+                result += f"{'Voltage:':<10}{('{:.3f}'.format(V_I).rstrip('0').rstrip('.')):>10} V\n"
+                result += f"{'Current:':<10}{('{:.5f}'.format(I_I).rstrip('0').rstrip('.')):>10} A\n"
+                result += f"{'Power:':<10}{('{:.3f}'.format(V_I * I_I).rstrip('0').rstrip('.')):>10} W\n"
+                # k += 1
 
         print(result)
         # return result
