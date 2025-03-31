@@ -171,6 +171,7 @@ class Circuit:
                     B_column.append(n)
 
                 n += 1
+        # print(B, B_row, B_column)
         return B, B_row, B_column
 
     def create_CSR_B_matrix(self):

@@ -10,7 +10,7 @@ class BasicComponent:
         self.netlist_2 = int(netlist_2)
         self.value = float(self.convert_unit(value))
 
-        if self.value < 0 and not isinstance(self, VoltageSource):
+        if self.value < 0 and isinstance(self, Resistor):
             raise ValueError(f"Invalid value for {self.component_name}: {self.value}. Value cannot be negative.")
 
             # ensure that nodes have different numbers
