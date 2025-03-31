@@ -21,10 +21,22 @@ class BasicComponent:
             raise ValueError(f"Invalid value component name.")
 
     def __str__(self):
-        return f"BasicComponent: Component Name:{self.component_name} Node1:{self.netlist_1} Node2:{self.netlist_2} Value:{self.value} Unit:{self.unit}"
+        return (
+            f"Component: {self.component_name}, "
+            f"Nodes: ({self.netlist_1}, {self.netlist_2}), "
+            f"Value: {self.value} {getattr(self, 'unit', '')}"
+        )
 
     def __repr__(self):
-        return f"(\'{self.component_name} {self.netlist_1} {self.netlist_2} {self.value} {self.unit})"
+        return (
+            f"{self.__class__.__name__}("
+            f"component_name={repr(self.component_name)}, "
+            f"netlist_1={self.netlist_1}, "
+            f"netlist_2={self.netlist_2}, "
+            f"value={self.value}, "
+            f"unit={repr(getattr(self, 'unit', None))})"
+        )
+
 
     def convert_unit(self, string):
         #handle metric prefixes
