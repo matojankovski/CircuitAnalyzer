@@ -37,8 +37,6 @@ Equations for circuit can be shown as:
 
 Matrix A consists of 4 matrices, $(m+n)x(m+n)$, where n is the number of nodes, and m is the number of independent voltage sources. Generally it can be described as:
 
-xxx
-
 G matrix $(n × n)$ is determined by the interconnections between the passive circuit elements.
 
 B matrix $(n × m)$ is determined by the connection of the voltage sources.
@@ -47,12 +45,15 @@ C matrix $(m × n)$ is determined by the connection of the voltage sources. C ma
 
 D matrix $(m × m)$ is zero if only independent sources are considered.
 
-Matrix x is  $(m + n) × 1$ and consist of unknown quantities, unknown nodal voltages and unknown current through the voltage sources.
-Matrix z is  $(m + n) × 1$ and consist of the sum of the currents throught the passive elements and values of the independent voltage sources.
-By following the rules for the creation of matrices we can create matrix Ax=z that can be calculated by using SciPy methods for calculation of sparse matrices.
+Matrix x is  $(m + n)$  × $1$ and consist of unknown quantities, unknown nodal voltages and unknown current through the voltage sources.
+Matrix z is  $(m + n)$  × $1$ and consist of the sum of the currents throught the passive elements and values of the independent voltage sources.
+By following the rules for the creation of matrices we can create matrix $Ax=z$ that can be calculated by using SciPy methods for calculation of sparse matrices.
 
 ### Limitations
-Currently CircuitAnalyzer can work only with passive elements such as resistors and voltage sources. The work on current sources and other reactive elements is in the process.
+Currently CircuitAnalyzer can work only with passive elements such as resistors voltage and current sources. The work on other reactive elements and transient analysis is in the process.
+
+### The Resources
+https://cheever.domains.swarthmore.edu/Ref/mna/MNA2.html
 
 
 
